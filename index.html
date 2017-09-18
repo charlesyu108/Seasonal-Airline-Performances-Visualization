@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<head>
+<title> Project 2 || Flight Performance</title>
+<link href="https://fonts.googleapis.com/css?family=Alegreya|Alegreya+Sans" rel="stylesheet">
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="http://d3js.org/topojson.v2.min.js"></script>
+<script src="https://d3js.org/d3-array.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v1.min.js"></script>
+<!-- Compiled and minified CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/css/materialize.min.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+
+<body>
+<div class = "main">
+    <div style = "height: 10px"></div>
+    <hr>
+    <div class = "title">
+      <h1>An Evaluation of Seasonal Airline Performances </h1>
+      <h3>A closer look at flight durations, flight delays, average airfares, and cancellations for routes between the top 30 busiest US airports in 2015</h3>
+    </div>
+
+    <div class = "centered" style = "position: fixed; top: 5%; left: 1.25%">
+      <h3 class = "centered"> Season:</h3>
+      <h3 id = "seasonLabel">WINTER</h3>
+      <h3><span id = "flightOrigin">___</span> to <span id = "flightDestination">___</span></h3><br>
+    </div>
+
+  <div id = "seasons" class = "seasonInput" style = "position: fixed; top: 40%; left: 25px ">
+  <tr>
+    <td> <a style = "background: #e0f7fa" onclick = "changeBackground('#e0f7fa', 1)" class = "home-cta btn" id = "Winter"> Winter </a> </td>
+    <td> <a onclick = "changeBackground('#a5d6a7', 2)" class = "home-cta btn" id = "Spring"> Spring </a> </td>
+    <td> <a onclick = "changeBackground('#fff59d', 3)" class = "home-cta btn" id = "Summer"> Summer </a> </td>
+    <td> <a onclick = "changeBackground('#ffcc80', 4)" class = "home-cta btn" id = "Fall"> Fall </a> </td>
+    <br>
+    <br>
+    <td> <a onclick = "conditionalReset()" class = "home-cta btn" id = "reset"> Reset </a> </td>
+  </tr>
+  </div>
+
+  <hr>
+  <div class = "dataSection card-panel" id= "inputs" height = "600px">
+    <div class = "left">
+        <!-- Show map -->
+        <svg width ="550" height ="500"/>
+    </div>
+    <div class = "right">
+      <div class="card-content black-text">
+        <span class="card-title"><h2>Pick Your Path<h2></span>
+            <div id = "originTable">
+            </div>
+      </div>
+    </div>
+  </div>
+
+<!-- flight times -->
+  <hr>
+  <div id = "flightTime" class = "card-panel infoCard">
+    <h1> Average Flight Times </h1>
+    <i onclick = "replay()" class="material-icons small btn replayBtn">replay</i>
+  </div>
+
+  <!-- Delays -->
+  <hr class = "infoCard">
+  <div id = "Delays" class = "card-panel infoCard">
+      <h1> Arrival Delays </h1>
+      <h3> Hover over to view expected arrival delays </h3>
+  </div>
+
+<hr class = "infoCard">
+<div id = "moneySpent" class = "card-panel infoCard">
+  <h1>Airfare</h1>
+</div>
+
+<!-- Cancellations -->
+<hr class = "infoCard">
+<div id = 'Cancellations' class = "card-panel infoCard">
+  <h1> Cancellations </h1>
+  <div class = "">
+      <object type = "image/svg+xml" data = "assets/airplane_red.svg" style = "width: 45px">
+        Red Plane
+      </object>
+    <span>= One flight cancelled</span>
+  </div>
+</div>
+<hr class = "infoCard">
+<div style = "height: 25px"></div>
+<h3> Built By: Ayah Dweik, Charles Yu, Matthew Teng </h3>
+<div style = "height: 25px"></div>
+
+
+<script>
+var svg = d3.select("svg");
+
+var projection = d3.geoAlbersUsa().scale(500);
+
+var path = d3.geoPath().projection(projection);
+var airports;
+
+var quarter = 1;
+
+var top30Airports = ['ATL', 'LAX', 'ORD', 'DFW', 'JFK', 'DEN', 'SFO', 'CLT', 'LAS', 'PHX',
+          'MIA', 'IAH', 'SEA', 'MCO', 'EWR', 'MSP', 'BOS', 'DTW', 'PHL', 'LGA',
+           'FLL', 'BWI', 'DCA', 'MDW', 'SLC', 'IAD', 'SAN', 'HNL','TPA', 'PDX']
+
+var airportCityNames = ['Atlanta', 'Los Angeles', 'Chicago', 'Dallas/Fort Worth', 'New York',
+          'Denver', 'San Francisco', 'Charlotte', 'Las Vegas', 'Phoenix', 'Miami', 'Houston',
+          'Seattle', 'Orlando', 'Newark', 'Minneapolis', 'Boston', 'Detroit', 'Philadelphia',
+          'New York', 'Fort Lauderdale', 'Baltimore', 'Washington', 'Chicago', 'Salt Lake City',
+          'Washington', 'San Diego', 'Honolulu', 'Tampa', 'Portland']
+
+var unavailablePaths = ['ATL', 'LAX LGA', 'ORD MDW', 'DFW MDW', 'JFK EWR IAH LGA MDW PHL',
+          'DEN', 'SFO LGA TPA', 'CLT HNL', 'LAS LGA', 'PHX LGA', 'MIA FLL HNL MDW PDX',
+          'IAH JFK MDW', 'SEA LGA', 'MCO HNL PDX TPA', 'EWR JFK LGA', 'MSP', 'BOS HNL',
+          'DTW HNL', 'PHL EWR HNL IAD JFK', 'LGA LAX SEA BWI EWR HNL JFK LAS PDX PHX SAN SFO SLC',
+          'FLL MIA HNL PDX SAN SLC', 'BWI DCA HNL IAD LGA', 'DCA BWI HNL IAD SAN',
+          'MDW DFW MIA ORD HNL IAH JFK', 'SLC FLL IAD LGA', 'IAD BWI DCA PHL SLC',
+          'SAN DCA FLL LGA TPA', 'HNL MIA BOS BWI CLT DCA DTW FLL LGA MCO MDW PHL TPA',
+          'TPA HNL MCO PDX SAN', 'PDX MIA FLL LGA MCO TPA']
+
+var origin = "";
+var dest = "";
+var ontime;
+var fare;
+
+var airlineLookUp = {
+  'AA': 'American Airlines',
+  'OO': 'SkyWest Airlines',
+  'DL': 'Delta Airlines',
+  'HA': 'Hawaiian Airlines',
+  'F9': 'Frontier Airlines',
+  'B6': 'JetBlue Airways',
+  'US': 'US Airways' ,
+  'AS': 'Alaska Airlines',
+  'NK': 'Spirit Airlines',
+  'MQ': 'Envoy Air',
+  'WN': 'Southwest Airlines',
+  'VX': 'Virgin America',
+  'EV': 'EVA Air',
+  'UA': 'United Airlines'
+}
+
+var airlineColors = {
+  'AA': '#ABFAA9',
+  'OO': '#00A9A5',
+  'DL': '#90C2E7',
+  'HA': '#F7D6E0',
+  'F9': '#60492C',
+  'B6': '#9F84BD',
+  'US': '#0D2149' ,
+  'AS': '#7D7C84',
+  'NK': '#E9D985',
+  'MQ': '#950952',
+  'WN': '#D35269',
+  'VX': '#FE7F2D',
+  'EV': '#8A6552',
+  'UA': '#6E44FF'
+}
+
+// create datastructure that will hold (k,v) pairs where
+// k = "CITYNAME AIRPORTCODE", and V = list of airport codes
+// that are unavailablePaths from the given airport
+var source = [];
+var unavailableFlights = {};
+function availableFlights(){
+  for (var i =0; i<airportCityNames.length; i++){
+    source.push(airportCityNames[i] + " " + top30Airports[i]);
+    unavailableFlights[top30Airports[i]] = unavailablePaths[i].split(" ");
+  }
+}
+
+// populate source flights
+function populateOriginFlights(){
+  var tableDiv = d3.select("#originTable");
+  var table = tableDiv.append("TABLE");
+  var tableBody = table.append("TBODY");
+
+  var x = 0;
+  for (var i = 0; i<10; i ++){
+    var tr = tableBody.append("TR");
+    for(var j = 0; j < 3; j ++){
+      var td = tr.append("TD")
+      .attr("id", source[x].slice(-3))
+      .text(source[x])
+      .style("height", "30px")
+      .style("width", "100px")
+      .attr("class", "airportTD");
+
+      x++;
+    }
+}
+
+
+  var tds= d3.selectAll("TD.airportTD");
+  tds
+  .each(function(td){
+      var t = d3.select(this);
+      t.on("click", function(){
+        var curr = t.attr("id")
+        //First Click
+
+        if(t.classed("unselectable")){
+          return;
+        }
+
+        if((origin == "" && dest == "") || (origin != "" && dest != "")){
+          reset();
+          var unavail = unavailableFlights[curr];
+          unavail.forEach(function(code){
+            var port = d3.select("#" + code);
+            port.classed("unselectable", true);
+          })
+          origin = curr;
+          d3.select("#flightOrigin")
+          .text(origin);
+          d3.select("#flightDestination")
+          .text("___")
+          dest = "";
+          return;
+        }
+        //Second click
+        else if(dest == ""){
+          dest =  curr;
+          d3.select("#flightDestination")
+          .text(dest);
+          d3.selectAll(".unselectable")
+          .classed("unselectable", false);
+          plotAll();
+        }
+  })
+  })
+}
+
+function plotAll(){
+  d3.selectAll(".infoCard")
+  .classed("infoCardVisible", true)
+  .classed("infoCard", false);
+  displayPath(origin, dest);
+  displayDelays(origin, dest, quarter);
+  displayFlightTimes(origin, dest, quarter);
+  displayPrice(origin, dest,quarter);
+  showCancellations(origin, dest, quarter);
+}
+
+function reset(){
+  d3.selectAll(".info").remove()
+  d3.selectAll("button.airportButton")
+  .attr("disabled", null);
+}
+
+availableFlights();
+populateOriginFlights();
+
+//Display functions
+function displayCities(){
+   var cities = svg.selectAll("circle").data(source);
+
+   cities.exit().remove;
+   cities = cities.enter().append("circle")
+   .attr("id", function(d){return "map" + d.slice(-3)})
+   .attr("class", "airport")
+   .attr("r", 3)
+   .style("fill", "#e54747")
+   .merge(cities);
+
+   cities
+   .attr("cx", function(d){
+     var coord = [airports["$" + d.slice(-3)].Longitude,airports["$" + d.slice(-3)].Latitude]
+     return projection(coord)[0];
+   })
+   .attr("cy", function(d){
+     var coord = [airports["$" + d.slice(-3)].Longitude,airports["$" + d.slice(-3)].Latitude]
+     return projection(coord)[1];
+   })
+   .on("mouseover", function(d){
+     var x = d3.select(this);
+     x.attr("r", 15)
+     .style("fill", "rgba(229,71,71, .5)");
+     d3.select("#cityLabel")
+     .text(d)
+     .attr("visibility", "visible");
+   })
+   .on("mouseout", function(d){
+     var x = d3.select(this);
+     x.attr("r", 3)
+     .style("fill", "#e54747");
+     d3.select("#cityLabel")
+     .attr("visibility", "hidden");
+   });
+ }
+
+//  draw path
+ function displayPath(origin, destination) {
+    coord1 = projection([airports["$" + origin].Longitude,airports["$" + origin].Latitude])
+    coord2 = projection([airports["$" + destination].Longitude,airports["$" + destination].Latitude])
+
+    var midpoint = [(coord1[0] + coord2[0])/2, (coord1[1] + coord2[1])/2]
+
+    var curve = "M " + coord1[0] + " " + coord1[1]+ " S " + midpoint[0] + " " + 200 + " " + coord2[0] + " " + coord2[1]
+
+    d3.select("svg")
+    .append("path")
+    .attr("d", curve)
+    .attr("class", "info")
+    .attr("fill", "transparent")
+    .attr('stroke', "rgba(229, 50, 71, .3)")
+    .attr('stroke-width', "4")
+    .attr("stroke-dasharray", ("10,10"));
+ }
+
+//Cancellation
+function showCancellations(origin, dest, quarter){
+
+  var flights = [];
+    for (var key in ontime){
+      var d = ontime[key];
+      if(d.ORIGIN == origin && d.DEST == dest && d.QUARTER == quarter){
+          flights.push(d);
+      }
+    }
+
+  var div = d3.select("#Cancellations");
+
+  flights.forEach(function(d){
+
+    var rate = d['CANCELLED'];
+    var numCancelled = Math.round(1000 * rate);
+    var arr = new Array(1000);
+    for( var i = 0; i < numCancelled; i ++){
+      var idx = Math.round(Math.random()*1000);
+      if (arr[idx] == undefined){
+        arr[idx] = 1;
+      } else{
+        i = i--;
+      }
+    }
+    d['CANCELLED_ARR'] = arr;
+  });
+
+  var routes = div.selectAll("routes").data(flights);
+
+  routes.exit().remove();
+
+  var routeG = routes.enter()
+  .append("g")
+  .attr("class", "info")
+  .merge(routes);
+
+  routeG
+  .append("h3")
+  .attr("x", 25)
+  .attr("y", 20)
+  .attr("stroke","black")
+  .style("font-size", "24")
+  .text(function(d) { return "For every 1000 flights on this path, " + airlineLookUp[d['CARRIER']] + " cancels " + Math.round(1000 * d["CANCELLED"]) +" flights.";} );
+
+  var routeSVG = routeG
+  .append("svg")
+  .attr("height","425")
+  .attr("width", "650");
+
+
+  for(var i = 0; i < 40; i ++){
+    for(var j = 0; j < 25; j ++){
+      routeSVG
+      .append("svg:image")
+      .attr("xlink:href", function (d){
+
+        if (d['CANCELLED_ARR'][(i+j*40)] == 1){
+          return "assets/airplane_red.svg"
+        } else{
+           return "assets/airplane_gray.svg"
+        }
+      })
+      .attr("id", "airplane")
+      .attr("x", 25 + 15 * i)
+      .attr("y",  5 + 15  * j)
+      .attr("width", "15")
+      .attr("height", "15")
+      .attr("id", "airplane");
+    }
+  }
+}
+
+//Money Spent
+  function displayPrice(origin, dest, quarter){
+    var fareObj = fare["$" + quarter + "," + origin + "," + dest]
+    var div = d3.select("#moneySpent");
+    if (fareObj){
+      div.append("h3")
+      .attr("class", "info")
+      .text("Average fare: $" + (fareObj['fare']).toFixed(2));
+
+      div.append("h3")
+      .attr("class", "info")
+      .text("Lowest fare: $" + (fareObj['fare_low']).toFixed(2) + " with");
+
+      div.append("h3")
+      .attr("class", "info")
+      .text( airlineLookUp[fareObj['carrier_low']]);
+    } else {
+      div.append("h3")
+      .attr("class", "info")
+      .text("Sorry, price data not available for this route.");
+    }
+  }
+
+//Delays
+function displayDelays(origin, dest, quarter){
+   var flights = [];
+    for (var key in ontime){
+      var d = ontime[key];
+      if(d.ORIGIN == origin && d.DEST == dest && d.QUARTER == quarter){
+          flights.push(d);
+      }
+    }
+
+    var div = d3.select("#Delays");
+
+    var svg = div.append("svg")
+    .attr("class", "info")
+    .attr("width", 600)
+    .attr("height", 400);
+
+    var label = div.append("h3")
+    .attr("class", "info")
+    .style("visibility", "hidden");
+
+    var absMaxDelay = d3.max(flights, function(d){
+      return Math.abs(d.ARR_DELAY);
+    })
+    var linewidth = 2;
+    var width= 50;
+    var xScale = d3.scaleLinear().domain([0, flights.length]).range([50, 550]);
+    var yScale = d3.scaleLinear().domain([0,absMaxDelay]).range([0, 120]);
+
+    var delays = svg.selectAll("delays").data(flights).enter();
+    delays.exit().remove();
+
+    delays.append("line")
+    .attr("x1", function(d, i){ return 50 + xScale(i); })
+    .attr("x2", function(d, i){ return 50 + xScale(i); })
+    .attr("y1", 200)
+    .attr("y2", function(d){
+     if(d.ARR_DELAY < 0){
+       return 200 - yScale(Math.abs(d.ARR_DELAY));
+      }
+      else if (d.ARR_DELAY > 0){
+       return 200 + yScale(Math.abs(d.ARR_DELAY));
+      }
+
+      })
+    .attr("stroke", function(d){ return airlineColors[d.CARRIER]; })
+    .attr("stroke-width", width)
+    .on("mouseover", function(d){
+      label.text(airlineLookUp[d.CARRIER] + " has an arrival delay of " + d.ARR_DELAY + " minutes.")
+      label.style("visibility", "visible");
+    })
+    .on("mouseout", function(){
+      label.style("visibility", "hidden");})
+    .merge(delays);
+
+    svg.append("line")
+    .attr("x1", 25)
+    .attr("x2", 575)
+    .attr("y1", 200)
+    .attr("y2", 200)
+    .attr("stroke", "black")
+    .attr("stroke-width", linewidth);
+
+     svg.append("text")
+    .attr("x", 300)
+    .attr("y", 15)
+    .attr("stroke", "black")
+    .attr("text-anchor", "middle")
+    .text("EARLY");
+
+
+    svg.append("text")
+    .attr("x", 300)
+    .attr("y", 385)
+    .attr("text-anchor", "middle")
+    .attr("stroke", "black")
+    .text("LATE");
+}
+
+//rgbToHex function taken from http://stackoverflow.com/questions/13712697/set-background-color-in-hex
+function rgbToHex(col)
+{
+    if(col.charAt(0)=='r')
+    {
+        col=col.replace('rgb(','').replace(')','').split(',');
+        var r=parseInt(col[0], 10).toString(16);
+        var g=parseInt(col[1], 10).toString(16);
+        var b=parseInt(col[2], 10).toString(16);
+        r=r.length==1?'0'+r:r; g=g.length==1?'0'+g:g; b=b.length==1?'0'+b:b;
+        var colHex='#'+r+g+b;
+        return colHex;
+    }
+}
+
+function changeBackground(color, numQuarter){
+  // Array of the <a> tags
+   var curr = document.getElementById("seasons").querySelectorAll(".home-cta");
+   var winterColor = "#e0f7fa";
+   var springColor = "#a5d6a7";
+   var summerColor = "#fff59d";
+   var fallColor = "#ffcc80";
+   var defaultColor = "#f5f3ee";
+   var colors = [winterColor,springColor,summerColor,fallColor];
+   var x = curr[numQuarter-1];
+
+  //  change button color
+  // button pressed already
+  if(rgbToHex(x.style.backgroundColor) != colors[numQuarter-1]){
+    quarter = numQuarter;
+    for (var i = 0; i<colors.length; i++){
+      if (curr[i] != x){
+        curr[i].style.backgroundColor = defaultColor;
+      }
+      else{
+        curr[i].style.backgroundColor = colors[i];
+        document.getElementById("seasonLabel").innerHTML = curr[i].innerText;
+        document.getElementById("flightOrigin").innerHTML = origin;
+        document.getElementById("flightDestination").innerHTML = dest;
+      }
+    }
+    if(origin != "" && dest != ""){
+      reset();
+      plotAll();
+    }
+    else{
+      document.getElementById("flightOrigin").innerHTML = "___";
+      document.getElementById("flightDestination").innerHTML = "___";
+    }
+  }
+}
+
+function replay(){
+  if(origin != "" && dest != ""){
+    reset();
+    plotAll();
+  }
+  else{
+    displayFlightTimes(origin, dest, quarter);
+  }
+}
+
+function resetColors(){
+  document.body.style.background = "#f6f6f6";
+  var curr = document.getElementById("seasons").querySelectorAll(".home-cta");
+  for(var i = 0; i<curr.length; i++){
+    curr[i].style.backgroundColor = "#f5f3ee";
+  }
+}
+
+function conditionalReset(){
+  reset();
+  resetColors();
+  d3.selectAll(".infoCardVisible")
+  .classed("infoCard", true)
+  .classed("infoCardVisible", false);
+  origin = "";
+  dest = "";
+  document.getElementById("seasonLabel").innerHTML = "WINTER";
+  document.getElementById("flightOrigin").innerHTML = "___";
+  document.getElementById("flightDestination").innerHTML = "___";
+}
+
+//Flight Times
+function displayFlightTimes(origin, dest, quarter){
+  //Note: Inspiration for animation from: http://stackoverflow.com/questions/13893127/how-to-draw-a-path-smoothly-from-start-point-to-end-point-in-d3-js
+    var flights = [];
+    for (var key in ontime){
+      var d = ontime[key];
+      if(d.ORIGIN == origin && d.DEST == dest && d.QUARTER == quarter){
+          flights.push(d);
+      }
+    }
+    var bestFlight = flights[0];
+
+    flights.forEach( function (d){
+      if (d.FLIGHT_TIME < bestFlight.FLIGHT_TIME){
+        bestFlight = d;
+      }
+    });
+
+    var longestTime = d3.max(flights, function(d){
+      return d['FLIGHT_TIME'];
+    });
+
+    var averageTime = d3.mean(flights, function(d){
+      return d['FLIGHT_TIME'];
+    });
+
+    var flightTime= d3.select("#flightTime");
+
+    var bestAirlineLabel = flightTime
+    .append("h3")
+    .attr("class", "info")
+    .text(airlineLookUp[bestFlight["CARRIER"]] +  " will get you there " + Math.round(averageTime - bestFlight['FLIGHT_TIME']) + " minutes earlier than the average airline.")
+
+    var routes = flightTime.selectAll("routes")
+    .data(flights)
+    .enter();
+
+    routes.exit().remove();
+
+    var routeEnter = routes
+    .append("svg")
+    .attr("style", "border: solid 1px black")
+    .attr("class", "info")
+    .attr("height", 100)
+    .attr("width", 600)
+    .merge(routes);
+
+    routeEnter
+    .append("text")
+    .text(function (d){ return airlineLookUp[d.CARRIER];})
+    .attr("stroke", "black")
+    .attr("x", 10)
+    .attr("y", 25)
+    .attr("font-size", 24);
+
+    routeEnter
+    .append("svg:image")
+    .attr("xlink:href", "assets/airplane.svg")
+    .attr("id", "airplane")
+    .attr("x", "10")
+    .attr("y", "60")
+    .attr("width", "20")
+    .attr("height", "20");
+
+    routeEnter
+    .append("text")
+    .text(function (d){ return d.ORIGIN;})
+    .attr("x", 10)
+    .attr("y", 90)
+    .attr("font-size", 10)
+    .attr("stroke", "black");
+
+    routeEnter
+    .append("text")
+    .text(function (d){ return d.DEST;})
+    .attr("x", 570)
+    .attr("y", 90)
+    .attr("font-size", 10)
+    .attr("stroke", "black");
+
+    routeEnter
+    .append("text")
+    .text(function (d){ return "Total Flight Time: " + d.FLIGHT_TIME + " minutes";})
+    .attr("x", 200)
+    .attr("y", 90)
+    .attr("font-size", 12)
+    .attr("opacity", 0)
+    .transition()
+      .delay(function (d){
+        return 8000 * d['FLIGHT_TIME']/(longestTime * 1.0) - 1000;
+      })
+      .duration(1000)
+      .attr("text", function(d){
+      return 8000/longestTime})
+      .attr("opacity", 1)
+      .attr("stroke", "black");
+
+    var path = routeEnter
+    .append("path")
+    .attr("d", "M 10,80 S  200,0  580,80")
+    .attr("stroke", "#A9AAA5")
+    .style("stroke-dasharray", ("3,3"))
+    .attr("stroke-width", 2)
+    .style("fill", "transparent");
+
+    var totalLength = path.node().getTotalLength();
+
+    var tracePath = routeEnter
+    .append("path")
+    .attr("d", "M 10,80 S  200,0  580,80")
+    .attr("stroke", function(d){
+        return airlineColors[d['CARRIER']];
+      })
+    .attr("stroke-width", 2)
+    .style("fill", "transparent");
+
+    tracePath
+    .attr("stroke-dasharray", totalLength + " " + totalLength)
+    .attr("stroke-dashoffset", totalLength)
+    .transition()
+    .duration(function (d){
+     return 8000 * d['FLIGHT_TIME']/(longestTime * 1.0);
+   })
+    .attr("stroke-dashoffset", 0);
+
+}
+
+
+
+//Initial Loading
+d3.queue()
+.defer(d3.csv, "avg_ontime.csv")
+.defer(d3.csv, "Fare.csv")
+.defer(d3.csv, "airports.csv")
+.defer(d3.json, "us.json")
+.await(function(error, rawOntime, rawFare, rawAirport, rawUS){
+    ontime = d3.map(rawOntime, function(d){
+      return [d.QUARTER,d.CARRIER,d.ORIGIN,d.DEST];
+    });
+
+    ontime.each(function(d){
+      d.ARR_DELAY = Number(d.ARR_DELAY);
+      d.CANCELLED = Number(d.CANCELLED);
+      d.DEP_DELAY = Number(d.DEP_DELAY);
+      d.FLIGHT_TIME = Number(d.FLIGHT_TIME);
+      d.QUARTER = Number(d.QUARTER);
+    });
+
+    fare = d3.map(rawFare, function (d){
+      return [d.quarter, d.airport_1, d.airport_2]
+    });
+
+    fare.each(function(d){
+      d.quarter = Number(d.quarter);
+      d.passengers = Number(d.passengers);
+      d.fare = Number(d.fare);
+      d.nsmiles = Number(d.nsmiles);
+      d.fare_low = Number(d.fare_low);
+      d.fare_lg = Number(d.fare_lg);
+    });
+
+    airports = d3.map(rawAirport, function(d){
+      return d.IATA;
+    });
+
+    airports.each(function(d){
+    d.Longitude = Number(d.Longitude)
+    d.Latitude = Number(d.Latitude)
+    })
+
+    states = topojson.feature(rawUS, rawUS.objects.states);
+
+    //Making map
+    projection.fitExtent([[0,0], [svg.attr("width"), svg.attr("height")]], states);
+
+    var pathGenerator = d3.geoPath().projection(projection);
+
+    var paths = svg.selectAll("path.state").data(states.features);
+    paths.enter().append("path").attr("class", "state")
+    .merge(paths)
+    .attr("d", function (state){
+      return pathGenerator(state)
+    })
+    .style("stroke", "#f5f3ee")
+    .style("fill", "#4a96ad");
+
+    svg.append("text")
+    .attr("visibility", "hidden")
+    .attr("x", svg.attr("width")/2)
+    .attr("y", 50)
+    .attr("font-size", 24)
+    .attr("text-anchor", "middle")
+    .attr("id", "cityLabel");
+
+    displayCities();
+});
+
+</script>
+</div>
+</body>
+</html>

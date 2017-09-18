@@ -1,0 +1,201 @@
+*{
+  padding: 0;
+  /*margin: 0;*/
+}
+body {
+  width: 100%;
+  text-align:center;
+  font-family: Gillsans, 'Calibri', sans-serif;
+  background: #f6f6f6;
+  color: black;
+}
+.main {
+  padding: 15px;
+  margin: 0 auto;
+  width: 80%;
+  display: inline-block;
+}
+.title>h3 {
+  /*padding: 10px;*/
+  margin: 0 auto;
+  display: inline-block;
+  position: relative;
+  width: 600px;
+  padding-bottom: 15px;
+}
+.title>h1{
+  margin-top: .5em;
+  margin-bottom: .5em;
+}
+.state-borders {
+  stroke: white;
+  stroke-width: 1px;
+}
+.states{
+  margin: auto;
+  display: inline-block;
+  fill: black;
+}
+.home-cta {
+  font-size: 18px;
+  display: block;
+  background:#f5f3ee;
+  color: #4a96ad;
+  padding: .5em .25em;
+  line-height: 1;
+  margin-bottom: 10px;
+  border: 1px solid black;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  -webkit-transition: all .2s ease-in-out;
+          transition: all .2s ease-in-out;
+}
+.home-cta:hover {
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+a {
+  text-decoration: none;
+  color: black;
+}
+.col-1 {
+  width: 300px;
+  padding: 0 10px;
+  margin: auto;
+  box-sizing: border-box;
+  /*border: 1px solid black;*/
+}
+.col-2 {
+  max-width: 620px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.col-3 {
+  width: 48%;
+  display: inline-block;
+  /*border: 1px solid black;*/
+}
+#inputs{
+  text-align: center;
+  justify-content: center;
+  /*padding: ;*/
+}
+input{
+  width: 135px;
+  font-size: 1.25em;
+  text-align: center;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid black;
+  margin-bottom: 10px;
+  background: rgba(142,22,22,.25);
+}
+div.dataSection{
+  display: block;
+  overflow: overlay;
+}
+.left{
+  display: inline-block;
+  float:left;
+  width: 66%;
+  /*border: 1px solid black;*/
+}
+.right{
+  display: inline-block;
+  overflow: overlay;
+  float:left;
+  width: 33%;
+  /*border: 1px solid black;*/
+}
+svg{
+  /*border: 1px solid black;*/
+  justify-content: center;
+}
+table {
+    border-collapse: collapse;
+}
+td.airportTD{
+    border: 1px solid black;
+    text-align: left;
+    padding: .8em 0;
+    padding-left: .7em;
+    font-size: .5em;
+    width: 100px;
+    height:30px;
+}
+tr:nth-child(n+2){
+  border: 1px solid black;
+}
+td:hover{
+  cursor: pointer;
+  background: #e54747;
+}
+.scroll{
+  overflow: scroll;
+}
+h1{
+  font-size: 2.15em;
+}
+h2{
+  margin: .25em;
+
+  font-size: 1.5em;
+}
+h3{
+  font-size: 1.25em;
+  text-align: center;
+}
+#Winter:hover{
+  background: #f5f3ee;
+}
+#Spring:hover{
+ background: #f5f3ee;
+}
+#Summer:hover{
+  background: #f5f3ee;
+}
+#Fall:hover{
+  background: #f5f3ee;
+}
+#reset:hover{
+  background: #f5f3ee;
+}
+hr{
+	text-align: center;
+  margin-top: 10px;
+}
+hr:after{
+	content: '\2708';
+	display: inline-block;
+	position: relative;
+	top: -21.75px;
+	padding: 0 15px;
+	color: #e54747;
+	font-size: 28px;
+}
+.material-icons:active, .material-icons:focus, .material-icons:hover{
+  cursor: pointer;
+}
+.centered{
+  margin: 3px;
+  padding: 2px;
+}
+
+.unselectable{
+  background: gray;
+}
+.unselectable:hover{
+  background: gray;
+  cursor: auto;
+}
+.card-panel{
+  /*background-color: #f5f3ee !important;*/
+}
+.replayBtn{
+  background: #e54747 !important;
+}
+.infoCard{
+  display: none;
+}
+.infoCardVisible{
+  display: block;
+}
